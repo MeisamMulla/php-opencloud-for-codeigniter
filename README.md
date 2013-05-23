@@ -14,7 +14,7 @@ This library will let you perform certain commands on the new Rackspace php-open
 Drop the files/folders in the `/application` folder into your CodeIgniter `/application` folder. You will then need to modify the contents of `/application/config/opencloud.php` to match your Rackspace account.
 
 ## Usage ##
-You can load the library in the controller you would like to use it in like so:
+You can load the library in any controller you would like to use it in like this:
 ```php
 $this->load->library('opencloud');
 ```
@@ -52,7 +52,7 @@ This will return a multi-dimentional array containing `name`, `count`, `bytes` f
 ### <a name="list_objects"></a>Listing all Objects in a Container ###
 You will need to set the container first by using the method `set_container()`
 ```php
-$this->opencloud->container('MyContainer');
+$this->opencloud->set_container('MyContainer');
 $objects = $this->opencloud->list_objects();
 ```
 This will return a multi-dimentional array containing `name`, `content_type`, `bytes` and `cdn-url` for each object.
@@ -60,7 +60,7 @@ This will return a multi-dimentional array containing `name`, `content_type`, `b
 ### <a name="add_object"></a>Adding objects in a Container ###
 You will need to set the container first by using the method `set_container()`
 ```php
-$this->opencloud->container('MyContainer');
+$this->opencloud->set_container('MyContainer');
 $this->opencloud->add_object('text1.txt', file_get_contents('files/text1.txt'), 'text/plain');
 $this->opencloud->add_object('text2.txt', file_get_contents('files/text2.txt'), 'text/plain');
 $this->opencloud->add_object('text3.txt', file_get_contents('files/text3.txt'), 'text/plain');
@@ -70,7 +70,7 @@ The first paramater will be the name you will assign the object, the second is t
 ### <a name="delete_object"></a>Deleting Objects from a Container ###
 You will need to set the container first by using the method `set_container()`
 ```php
-$this->opencloud->container('MyContainer');
+$this->opencloud->set_container('MyContainer');
 $this->opencloud->delete_object('text1.txt');
 $this->opencloud->delete_object('text2.txt');
 $this->opencloud->delete_object('text3.txt');
