@@ -20,8 +20,8 @@ class cloudfiles extends CI_Controller {
 
 		foreach ($containers as $container) {
 			echo 'name:' . $container->name;
-            echo 'count:' . $container->count;
-            echo 'bytes:' . $container->bytes;
+			echo 'count:' . $container->count;
+			echo 'bytes:' . $container->bytes;
 		}
 
 
@@ -31,8 +31,8 @@ class cloudfiles extends CI_Controller {
 
 		foreach ($objects as $object) {
 			echo 'name:' . $object->name;
-            echo 'content_type:' . $object->content_type;
-            echo 'bytes:' . $object->bytes;
+			echo 'content_type:' . $object->content_type;
+			echo 'bytes:' . $object->bytes;
 		}
 
 
