@@ -1,4 +1,4 @@
-php-opencloud libraray for CodeIgniter
+PHP-OpenCloud Library for CodeIgniter
 =============================
 
 This library will let you perform certain commands on the new Rackspace php-opencloud API. Currently the following methods are available:
