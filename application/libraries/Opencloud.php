@@ -148,7 +148,7 @@ class Opencloud
                     'name' => $item->name,
                     'content_type' => $item->content_type,
                     'bytes' => $item->bytes,
-                    'cdn-url' => $item->CDNUrl()
+                    'cdn-url' => $item->PublicUrl()
                 );
             }
 
