@@ -1,13 +1,12 @@
 <?php
 /**
- * Defines a DNS domain
- *
- * @copyright 2012-2013 Rackspace Hosting, Inc.
- * See COPYING for licensing information
- *
- * @package phpOpenCloud
- * @version 1.0
- * @author Glen Campbell <glen.campbell@rackspace.com>
+ * PHP OpenCloud library.
+ * 
+ * @copyright Copyright 2013 Rackspace US, Inc. See COPYING for licensing information.
+ * @license   https://www.apache.org/licenses/LICENSE-2.0 Apache 2.0
+ * @version   1.6.0
+ * @author    Glen Campbell <glen.campbell@rackspace.com>
+ * @author    Jamie Hannaford <jamie.hannaford@rackspace.com>
  */
 
 namespace OpenCloud\DNS;
@@ -17,172 +16,217 @@ namespace OpenCloud\DNS;
  *
  * Note that the `Subdomain` class is defined in this same file because of
  * mutual dependencies.
- *
- * @api
- * @author Glen Campbell <glen.campbell@rackspace.com>
  */
-class Domain extends Object {
+class Domain extends Object
+{
 
-	public
-		$id,
-		$accountId,
-		$ttl,
-		$updated,
-		$emailAddress,
-		$created,
-		$name,
-		$comment;
+    public $id;
+    public $accountId;
+    public $ttl;
+    public $updated;
+    public $emailAddress;
+    public $created;
+    public $name;
+    public $comment;
 
-	protected static
-		$json_name = FALSE,
-		$json_collection_name = 'domains',
-		$url_resource = 'domains';
+    protected static $json_name = FALSE;
+    protected static $json_collection_name = 'domains';
+    protected static $url_resource = 'domains';
 
-	protected
-		$_create_keys = array('name','emailAddress','ttl','comment'),
-		$_update_keys = array('emailAddress','ttl','comment');
+    protected $createKeys = array(
+        'name',
+        'emailAddress',
+        'ttl',
+        'comment'
+    );
 
-	private
-		$records = array(),
-		$subdomains = array();
+    protected $updateKeys = array(
+        'emailAddress',
+        'ttl',
+        'comment'
+    );
 
-	/**
-	 * returns a Record object
-	 *
-	 * Note that this method is available at the DNS level, but only for
-	 * PTR records.
-	 *
-	 * @return Record
-	 */
-	public function Record($info=NULL) {
-		return new Record($this, $info);
-	}
+    private $records = array();
+    private $subdomains = array();
 
-	/**
-	 * returns a Collection of Record objects
-	 *
-	 * @param array $filter query-string parameters
-	 * @return \OpenCloud\Collection
-	 */
-	public function RecordList($filter=array()) {
-		return $this->Parent()->Collection(
-			'\OpenCloud\DNS\Record', NULL, $this, $filter);
-	}
+    /**
+     * returns a Record object
+     *
+     * Note that this method is available at the DNS level, but only for
+     * PTR records.
+     *
+     * @return Record
+     */
+    public function record($info = null)
+    {
+        $resource = new Record($this->getService());
+        $resource->setParent($this);
+        $resource->populate($info);
+        return $resource;
+    }
 
-	/**
-	 * returns a Subdomain object (child of current domain)
-	 *
-	 */
-	public function Subdomain($info=array()) {
-		return new Subdomain($this, $info);
-	}
+    /**
+     * returns a Collection of Record objects
+     *
+     * @param array $filter query-string parameters
+     * @return \OpenCloud\Collection
+     */
+    public function recordList($filter = array())
+    {
+        return $this->getParent()->collection('OpenCloud\DNS\Record', null, $this, $filter);
+    }
 
-	/**
-	 * returns a Collection of subdomains
-	 *
-	 * The subdomains are all `DNS:Domain` objects that are children of
-	 * the current domain.
-	 *
-	 * @param array $filter key/value pairs for query string parameters
-	 * return \OpenCloud\Collection
-	 */
-	public function SubdomainList($filter=array()) {
-		return $this->Parent()->Collection(
-			'\OpenCloud\DNS\Subdomain', NULL, $this);
-	}
+    /**
+     * returns a Subdomain object (child of current domain)
+     *
+     */
+    public function subdomain($info = array())
+    {
+        $resource = new Subdomain($this->getService());
+        $resource->setParent($this);
+        $resource->populate($info);
+        return $resource;
+    }
 
-	/**
-	 * Adds a new record to the list (for multiple record creation)
-	 *
-	 * @api
-	 * @param Record $rec the record to add
-	 * @return integer the number of records
-	 */
-	public function AddRecord(Record $rec) {
-		$this->records[] = $rec;
-		return count($this->records);
-	}
+    /**
+     * returns a Collection of subdomains
+     *
+     * The subdomains are all `DNS:Domain` objects that are children of
+     * the current domain.
+     *
+     * @param array $filter key/value pairs for query string parameters
+     * return \OpenCloud\Collection
+     */
+    public function subdomainList($filter = array())
+    {
+        return $this->getParent()->collection('OpenCloud\DNS\Subdomain', null, $this);
+    }
 
-	/**
-	 * adds a new subdomain (for multiple subdomain creation)
-	 *
-	 * @api
-	 * @param Subdomain $subd the subdomain to add
-	 * @return integer the number of subdomains
-	 */
-	public function AddSubdomain(Subdomain $subd) {
-		$this->subdomains[] = $subd;
-		return count($this->subdomains);
-	}
+    /**
+     * Adds a new record to the list (for multiple record creation)
+     *
+     * @api
+     * @param Record $rec the record to add
+     * @return integer the number of records
+     */
+    public function addRecord(Record $record)
+    {
+        $this->records[] = $record;
+        return count($this->records);
+    }
 
-	/**
-	 * returns changes since a specified date/time
-	 *
-	 * @param string $since the date or time
-	 * @return DNS\Changes
-	 */
-	public function Changes($since=NULL) {
-		if (isset($since))
-			$url = $this->Url('changes', array('since'=>$since));
-		else
-			$url = $this->Url('changes');
+    /**
+     * adds a new subdomain (for multiple subdomain creation)
+     *
+     * @api
+     * @param Subdomain $subd the subdomain to add
+     * @return integer the number of subdomains
+     */
+    public function addSubdomain(Subdomain $subdomain)
+    {
+        $this->subdomains[] = $subdomain;
+        return count($this->subdomains);
+    }
 
-		// perform the request
-		$obj = $this->Service()->SimpleRequest($url);
+    /**
+     * returns changes since a specified date/time
+     *
+     * @param string $since the date or time
+     * @return DNS\Changes
+     */
+    public function changes($since = null)
+    {   
+        $url = $this->url('changes', isset($since) ? array('since' => $since) : null);
+        return $this->getService()->simpleRequest($url);
+    }
 
-		return $obj;
-	}
+    /**
+     * exports the domain
+     *
+     * @return AsyncResponse
+     */
+    public function export()
+    {
+        return $this->getService()->asyncRequest($this->url('export'));
+    }
 
-	/**
-	 * exports the domain
-	 *
-	 * @return AsyncResponse
-	 */
-	public function Export() {
-		$url = $this->Url('export');
-		return $this->Service()->AsyncRequest($url);
-	}
+    /**
+     * clones the domain to the specified target domain
+     *
+     * @param string $newdomain the new domain to create from this domain
+     * @param boolean $sub to clone subdomains as well
+     * @param boolean $comments Replace occurrences of the reference domain
+     *  name with the new domain name in comments
+     * @param boolean $email Replace occurrences of the reference domain
+     *  name with the new domain name in email addresses on the cloned
+     *  (new) domain.
+     * @param boolean $records Replace occurrences of the reference domain
+     *  name with the new domain name in data fields (of records) on the
+     *  cloned (new) domain. Does not affect NS records.
+     * @return AsyncResponse
+     */
+    public function cloneDomain(
+        $newdomain,
+        $sub = true,
+        $comments = true,
+        $email = true,
+        $records = true
+    ) {
+        $url = $this->url('clone', array(
+            'cloneName'          => $newdomain,
+            'cloneSubdomains'    => $sub,
+            'modifyComment'      => $comments,
+            'modifyEmailAddress' => $email,
+            'modifyRecordData'   => $records
+        ));
+        return $this->getService()->asyncRequest($url, 'POST');
+    }
 
-	/* ---------- PROTECTED METHODS ---------- */
+    /**
+     * handles creation of multiple records at Create()
+     *
+     * @api
+     * @return \stdClass
+     */
+    protected function createJson()
+    {
+        $object = parent::createJson();
 
-	/**
-	 * handles creation of multiple records at Create()
-	 *
-	 * @api
-	 * @return \stdClass
-	 */
-	protected function CreateJson() {
-		$obj = parent::CreateJson();
+        // add records, if any
+        if (count($this->records)) {
+            
+            $recordsObject = (object) array('records' => array());
 
-		// add records, if any
-		if (count($this->records) > 0) {
-			$recobj = new \stdClass;
-			$recobj->records = array();
-			foreach($this->records as $rec) {
-				$robj = new \stdClass;
-				foreach($rec->CreateKeys() as $key)
-					if (isset($rec->$key))
-						$robj->$key = $rec->$key;
-				$recobj->records[] = $robj;
-			}
-			$obj->domains[0]->recordsList = $recobj;
-		}
+            foreach ($this->records as $record) {
+                $recordObject = new \stdClass;
+                foreach($record->getCreateKeys() as $key) {
+                    if (isset($record->$key)) {
+                        $recordObject->$key = $record->$key;
+                    }
+                }
+                $recordsObject->records[] = $recordObject;
+            }
+            $object->domains[0]->recordsList = $recordsObject;
+        }
 
-		// add subdomains, if any
-		if (count($this->subdomains) > 0) {
-			$sub = new \stdClass;
-			$sub->domains = array();
-			foreach($this->subdomains as $subdom) {
-				$sobj = new \stdClass;
-				foreach($subdom->CreateKeys() as $key)
-					if (isset($subdom->$key))
-						$sobj->$key = $subdom->$key;
-				$sub->domains[] = $sobj;
-			}
-			$obj->domains[0]->subdomains = $sub;
-		}
+        // add subdomains, if any
+        if (count($this->subdomains)) {
+            
+            $subdomainsObject = (object) array('domains' => array());
 
-		return $obj;
-	}
+            foreach($this->subdomains as $subdomain) {
+                $subdomainObject = new \stdClass;
+                foreach($subdomain->getCreateKeys() as $key) {
+                    if (isset($subdomain->$key)) {
+                        $subdomainObject->$key = $subdomain->$key;
+                    }
+                }
+                $subdomainsObject->domains[] = $subdomainObject;
+            }
+            $object->domains[0]->subdomains = $subdomainsObject;
+        }
+        
+        return $object;
+    }
 
-} // class Domain
+}

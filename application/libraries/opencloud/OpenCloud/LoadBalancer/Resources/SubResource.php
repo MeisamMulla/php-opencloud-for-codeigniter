@@ -1,6 +1,18 @@
 <?php
+/**
+ * PHP OpenCloud library.
+ * 
+ * @copyright Copyright 2013 Rackspace US, Inc. See COPYING for licensing information.
+ * @license   https://www.apache.org/licenses/LICENSE-2.0 Apache 2.0
+ * @version   1.6.0
+ * @author    Glen Campbell <glen.campbell@rackspace.com>
+ * @author    Jamie Hannaford <jamie.hannaford@rackspace.com>
+ */
 
 namespace OpenCloud\LoadBalancer\Resources;
+
+use OpenCloud\Common\PersistentObject;
+use OpenCloud\Common\Lang;
 
 /**
  * SubResource is an abstract class that handles subresources of a
@@ -17,96 +29,84 @@ namespace OpenCloud\LoadBalancer\Resources;
  *   anonymous, this defines the name of the element holding the object.
  * Of these, only the `$json_name` and `$url_resource` are required.
  */
-abstract class SubResource extends \OpenCloud\AbstractClass\PersistentObject {
-	
-	private
-		$parent;	// holds the parent load balancer
+abstract class SubResource extends PersistentObject 
+{
+    
+    /**
+     * This method needs attention.
+     * 
+     * @codeCoverageIgnore
+     */
+    public function initialRefresh()
+    {
+        if (isset($this->id)) {
+            $this->refresh();
+        } else {
+            $entity = (method_exists($this->getParent(), 'url')) ? $this->getParent() : $this->getService();
+            $this->refresh(null, $entity->url($this->resourceName()));
+        }
+    }
 
-	/**
-	 * constructs the SubResource's object
-	 *
-	 * @param mixed $obj the parent object
-	 * @param mixed $value the ID or array of values for the object
-	 */
-	public function __construct($obj, $value=NULL) {
-		$this->parent = $obj;
-		parent::__construct($obj->Service(), $value);
-		/**
-		 * Note that, since these sub-resources do not have an ID, we must
-		 * fake out the `Refresh` method.
-		 */
-		 if (isset($this->id))
-			$this->Refresh();
-		 else
-			$this->Refresh('<no-id>');
-	}
+    /**
+     * returns the URL of the SubResource
+     *
+     * @api
+     * @param string $subresource the subresource of the parent
+     * @param array $qstr an array of key/value pairs to be converted to
+     *  query string parameters for the subresource
+     * @return string
+     */
+    public function url($subresource = null, $qstr = array()) 
+    {
+        return $this->getParent()->url($this->ResourceName());
+    }
 
-	/**
-	 * returns the URL of the SubResource
-	 *
-	 * @api
-	 * @param string $subresource the subresource of the parent
-	 * @param array $qstr an array of key/value pairs to be converted to
-	 *	query string parameters for the subresource
-	 * @return string
-	 */
-	public function Url($subresource=NULL, $qstr=array()) {
-		return $this->Parent()->Url($this->ResourceName());
-	}
+    /**
+     * returns the JSON document's object for creating the subresource
+     *
+     * The value `$_create_keys` should be an array of names of data items
+     * that can be used in the creation of the object.
+     *
+     * @return \stdClass;
+     */
+    protected function CreateJson() 
+    {
+        $object = new \stdClass;
 
-	/**
-	 * returns the JSON document's object for creating the subresource
-	 *
-	 * The value `$_create_keys` should be an array of names of data items
-	 * that can be used in the creation of the object.
-	 *
-	 * @return \stdClass;
-	 */
-	protected function CreateJson() {
-    	$obj = new \stdClass();
-    	$top = $this->JsonName();
-    	if ($top) {
-			$obj->$top = new \stdClass();
-			foreach($this->_create_keys as $item)
-				$obj->$top->$item = $this->$item;
-		}
-		else {
-			foreach($this->_create_keys as $item)
-				$obj->$item = $this->$item;
-		}
-    	return $obj;
-	}
+        foreach ($this->createKeys as $item) {
+            $object->$item = $this->$item;
+        }
+        
+        if ($top = $this->jsonName()) {
+            $object = (object) array($top => $object);
+        }
+        
+        return $object;
+    }
 
-	/**
-	 * returns the JSON for the update (same as create)
-	 *
-	 * For these subresources, the update JSON is the same as the Create JSON
-	 * @return \stdClass
-	 */
-	protected function UpdateJson($params = array()) {
-		return $this->CreateJson();
-	}
+    /**
+     * returns the JSON for the update (same as create)
+     *
+     * For these subresources, the update JSON is the same as the Create JSON
+     * @return \stdClass
+     */
+    protected function updateJson($params = array()) 
+    {
+        return $this->createJson();
+    }
 
-	/**
-	 * returns the Parent object (usually a LoadBalancer, but sometimes another
-	 * SubResource)
-	 *
-	 * @return mixed
-	 */
-	public function Parent() {
-		return $this->parent;
-	}
-
-	/**
-	 * returns a (default) name of the object
-	 *
-	 * The name is constructed by the object class and the object's ID.
-	 *
-	 * @api
-	 * @return string
-	 */
-	public function Name() {
-		return sprintf(\OpenCloud\Base\Lang::translate('%s-%s'),
-			get_class($this), $this->Parent()->Id());
-	}
-} // end SubResource
+    /**
+     * returns a (default) name of the object
+     *
+     * The name is constructed by the object class and the object's ID.
+     *
+     * @api
+     * @return string
+     */
+    public function name() 
+    {
+        return method_exists($this->getParent(), 'id') 
+            ? sprintf('%s-%s', get_class($this), $this->getParent()->id())
+            : parent::name();
+    }
+}
