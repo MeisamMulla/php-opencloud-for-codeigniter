@@ -1,112 +1,77 @@
 <?php
 /**
- * Defines a volume attachment object
- *
- * @copyright 2012-2013 Rackspace Hosting, Inc.
- * See COPYING for licensing information
- *
- * @package phpOpenCloud
- * @version 1.1
- * @author Glen Campbell <glen.campbell@rackspace.com>
+ * PHP OpenCloud library.
+ * 
+ * @copyright Copyright 2013 Rackspace US, Inc. See COPYING for licensing information.
+ * @license   https://www.apache.org/licenses/LICENSE-2.0 Apache 2.0
+ * @version   1.6.0
+ * @author    Glen Campbell <glen.campbell@rackspace.com>
+ * @author    Jamie Hannaford <jamie.hannaford@rackspace.com>
  */
 
 namespace OpenCloud\Compute;
 
-use OpenCloud\Base\Lang;
+use OpenCloud\Common\Lang;
+use OpenCloud\Common\Exceptions;
+use OpenCloud\Common\PersistentObject;
 
 /**
- * The VolumeAttachment class represents a volume that is attached
- * to a server.
- *
- * @api
- * @author Glen Campbell <glen.campbell@rackspace.com>
+ * The VolumeAttachment class represents a volume that is attached to a server.
  */
-class VolumeAttachment extends \OpenCloud\AbstractClass\PersistentObject {
+class VolumeAttachment extends PersistentObject 
+{
 
-	public
-		$id,
-		$device,
-		$serverId,
-		$volumeId;
+    public $id;
+    public $device;
+    public $serverId;
+    public $volumeId;
 
-	public static
-		$json_name = 'volumeAttachment',
-		$url_resource = 'os-volume_attachments';
+    public static $json_name = 'volumeAttachment';
+    public static $url_resource = 'os-volume_attachments';
 
-	private
-		$_server,
-	    $_create_keys = array(
-	        'volumeId',
-	        'device'
-	    );
+    private $createKeys = array('volumeId', 'device');
 
-	/**
-	 * creates the object
-	 *
-	 * This overrides the default constructor so that we can save off the
-	 * server to which this attachment is associated.
-	 */
-	public function __construct(Server $server, $id=NULL) {
-		$this->_server = $server;
-		return parent::__construct($server->Service(), $id);
-	}
+    /**
+     * updates are not permitted
+     *
+     * @throws OpenCloud\UpdateError always
+     */
+    public function update($params = array()) 
+    {
+        throw new Exceptions\UpdateError(Lang::translate('Updates are not permitted'));
+    }
 
-	/**
-	 * updates are not permitted
-	 *
-	 * @throws OpenCloud\UpdateError always
-	 */
-	public function Update($params=array()) {
-		throw new \OpenCloud\Base\Exceptions\UpdateError(Lang::translate('Updates are not permitted'));
-	}
+    /**
+     * returns a readable name for the attachment
+     *
+     * Since there is no 'name' attribute, we'll hardcode something
+     *
+     * @api
+     * @return string
+     */
+    public function name() 
+    {
+        return sprintf('Attachment [%s]', $this->volumeId ?: 'N/A');
+    }
 
-	/**
-	 * returns the Parent (server) of the volume attachment
-	 *
-	 * This is a subresource of the server, not of the service.
-	 *
-	 * @return Server
-	 */
-	public function Parent() {
-		return $this->_server;
-	}
+    /**
+     * returns the JSON object for Create()
+     *
+     * @return stdClass
+     */
+    protected function createJson() 
+    {
+        $object = new \stdClass;
+        
+        foreach($this->createKeys as $key) {
+            if (isset($this->$key)) {
+                $object->$key = $this->$key;
+            }
+        }
 
-	/**
-	 * returns a readable name for the attachment
-	 *
-	 * Since there is no 'name' attribute, we'll hardcode something
-	 *
-	 * @api
-	 * @return string
-	 */
-	public function Name() {
-	    if ($this->volumeId)
-	        $id = $this->volumeId;
-	    else
-	        $id = 'N/A';
-		return sprintf('Attachment [%s]', $id);
-	}
-
-	/********** PROTECTED METHODS **********/
-
-	/**
-	 * returns the JSON object for Create()
-	 *
-	 * @return stdClass
-	 */
-	protected function CreateJson() {
-	    $obj = new \stdClass();
-	    $elem = $this->JsonName();
-	    $obj->$elem = new \stdClass();
-
-	    // set the properties
-	    foreach($this->_create_keys as $key) {
-	    	if ($this->$key) {
-	    		$obj->$elem->$key = $this->$key;
-	    	}
-	    }
-
-	    return $obj;
-	}
+        return (object) array(
+            $this->jsonName() => $object
+        );
+    }
 
 }

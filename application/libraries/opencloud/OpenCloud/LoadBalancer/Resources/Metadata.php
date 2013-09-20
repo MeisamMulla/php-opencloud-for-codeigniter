@@ -1,22 +1,38 @@
 <?php
+/**
+ * PHP OpenCloud library.
+ * 
+ * @copyright Copyright 2013 Rackspace US, Inc. See COPYING for licensing information.
+ * @license   https://www.apache.org/licenses/LICENSE-2.0 Apache 2.0
+ * @version   1.6.0
+ * @author    Glen Campbell <glen.campbell@rackspace.com>
+ * @author    Jamie Hannaford <jamie.hannaford@rackspace.com>
+ */
 
 namespace OpenCloud\LoadBalancer\Resources;
 
 /**
- * sub-resource to manage Metadata
+ * Sub-resource to manage Metadata
  */
-class Metadata extends SubResource {
-	public
-		$id,
-		$key,
-		$value;
-	protected static
-		$json_name = 'meta',
-		$json_collection_name = 'metadata',
-		$url_resource = 'metadata';
-	protected
-		$_create_keys = array('key', 'value');
-	public function Name() {
-		return $this->key;
-	}
+class Metadata extends SubResource 
+{
+
+    public $id;
+    public $key;
+    public $value;
+
+    protected static $json_name = 'meta';
+    protected static $json_collection_name = 'metadata';
+    protected static $url_resource = 'metadata';
+
+    protected $createKeys = array(
+        'key', 
+        'value'
+    );
+
+    public function name() 
+    {
+        return $this->key;
+    }
+
 }
