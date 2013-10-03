@@ -39,15 +39,28 @@ class Opencloud
     private $container;
 
     public $error;
-    
-    
-    function __construct($params = array())
+    public $last_response;
+
+
+ 	/**
+	 * Initialize
+	 * 
+	 * @note	calls initialize
+	 */    
+    function __construct()
     {
         $this->CI =& get_instance();        
         $this->initialize();
     }
     
-    // Initializes the library parameters
+
+ 	/**
+	 * Initialize
+	 * 
+	 * @public
+	 * 
+	 * @todo	add params to enable the ability to override the config
+	 */
     public function initialize()
     {   
         $this->CI->config->load('opencloud');
@@ -76,12 +89,82 @@ class Opencloud
         }
     }
     
+    
+   	/**
+	 * Reset Request Response
+	 * 
+	 * @private
+	 * 
+	 * @desc	Reset internal messages before a new request
+	 * 
+	 * @return	mixed
+	 */    
+    private function reset_request_response() {
+		$this->error = null;
+		$this->last_response = null;
+	}
+
+
+ 	/**
+	 * Get Last Response
+	 * 
+	 * @public
+	 * 
+	 * @desc	This method exposes responses from various methods (end points) within the open 
+	 * 			cloud lib. In some cases, if a method in this class returns true, you may
+	 * 			still need to inspect the response to get more details (ie. bulk delete will
+	 * 			return true if the request was successful, however, you should inspect the 
+	 * 			response to see how many files were deleted, failed, etc).
+	 * 
+	 * @note	The method name contains "last", as an additional reminder that this method only returns
+	 * 			the response from the last request made
+	 * 
+	 * @return	mixed
+	 */    
+    public function get_last_response() {
+		return $this->last_response;
+	}
+	
+	
+ 	/**
+	 * Get Last Error
+	 * 
+	 * @public
+	 * 
+	 * @note	The method name contains last, as an additional reminder that this method only returns
+	 * 			error information for the last request made
+	 * 
+	 * @return	mixed	string containing the error message from the caught exception during the last request,
+	 * 					null if there was no error
+	 */    
+    public function get_last_error() {
+		return $this->error;
+	}
+
+
+ 	/**
+	 * Create Container
+	 * 
+	 * @public
+	 * 
+	 * @note	This method returns true if the container name you are
+	 * 			attempting to create already exists
+	 * 
+	 * @param	string	the name of the container you wish to create
+	 * @return	bool	TRUE on success, FALSE on failure 
+	 */    
     public function create_container($name) {
+		$this->reset_request_response();
+		
         try {
             $container = $this->ostore->Container();
-            $container->Create(array('name' => $name));
+            $this->last_response = $container->Create(array('name' => $name));
+            
+            if( $this->last_response ) {
 
-            $container->PublishToCDN();
+				$container->PublishToCDN();
+				
+			}
 
             return true;
 
@@ -92,9 +175,24 @@ class Opencloud
         }
     }
 
+
+ 	/**
+	 * Delete Container
+	 * 
+	 * @public
+	 * 
+	 * @note	Only empty containers can be deleted
+	 * 
+	 * 			$this->last_response is set after a successful call
+	 * 
+	 * @param	string	the name of the container you wish to delete
+	 * @return	bool	TRUE on success, FALSE on failure 
+	 */
     public function delete_container($name) {
+		$this->reset_request_response();
+		
         try {
-            $this->ostore->Container($name)->Delete();
+            $this->last_response = $this->ostore->Container($name)->Delete();
 
             return true;
         } catch (Exception $e) {
@@ -103,8 +201,19 @@ class Opencloud
             return false;
         }
     }
-    
+  
+  
+ 	/**
+	 * List Containers
+	 * 
+	 * @public
+	 * 
+	 * @return	mixed	array of container objects available under the current account, 
+	 * 					FALSE on an error
+	 */  
     public function list_containers() {
+		$this->reset_request_response();
+		
         $containers = array();
         
         try {
@@ -127,9 +236,22 @@ class Opencloud
         }
     }
 
+
+ 	/**
+	 * Set Container
+	 * 
+	 * @public
+	 * 
+	 * @param	string	the name of the container you want to use
+	 * @return	bool	TRUE on success, FALSE on failure 
+	 */
     public function set_container($container) {
+		$this->reset_request_response();
+		
         try {
             $this->container = $this->ostore->Container($container);
+            
+            return true;
         } catch (Exception $e) {
             $this->error = $e->getMessage();
 
@@ -137,7 +259,18 @@ class Opencloud
         }
     }
 
+
+ 	/**
+	 * List Objects
+	 * 
+	 * @public
+	 * 
+	 * @return	mixed	array of data objects in the current container, 
+	 * 					FALSE on an error
+	 */
     public function list_objects() {
+		$this->reset_request_response();
+		
         $objects = array();
         
         try {
@@ -160,15 +293,32 @@ class Opencloud
             return false;
         }
     }
-    
-    public function add_object($name, $contents, $content_type) {
+ 
+ 
+ 	/**
+	 * Add Object
+	 * 
+	 * @public
+	 * 
+	 * @note	$this->last_response is set after a successful call
+	 * 
+	 * @param	string	the name of file to add
+	 * @param	string	the file contents
+	 * @param	string	the content type (mime type) of the file
+	 * @param	mixed	to extract a tar.gz or tar.bz2 file being added, pass a string containing the type of extraction
+	 * 					you want performed after the compressed file is uploaded (ie. tar, tar.gz, tar.bz2)
+	 * @return	bool 	TRUE on success, FALSE on failure  
+	 */   
+    public function add_object($name, $contents, $content_type, $extractArchive = null) {
+		$this->reset_request_response();
+		
         try {
             $object = $this->container->DataObject();
 
             $object->SetData($contents);
             $object->name = $name;
             $object->content_type = $content_type;
-            $object->Create();
+            $this->last_response = $object->Create(array(), null, $extractArchive);
 
             return true;
         } catch (Exception $e) {
@@ -177,10 +327,23 @@ class Opencloud
             return false;
         }
     }
-
+	
+	
+	/**
+	 * Delete Object
+	 * 
+	 * @public
+	 * 
+	 * @note	$this->last_response is set after a successful call
+	 * 
+	 * @param	string	the name of file to delete
+	 * @return	bool	TRUE on success, FALSE on failure 
+	 */
     public function delete_object($name) {
+		$this->reset_request_response();
+		
         try {
-            $this->container->DataObject($name)->Delete();
+           $this->last_response = $this->container->DataObject($name)->Delete();
 
             return true;
         } catch (Exception $e) {
@@ -189,6 +352,34 @@ class Opencloud
             return false;
         }
     }
+    
+
+	/**
+	 * Bulk Delete Objects
+	 * 
+	 * @public
+	 * 
+	 * @note	$this->last_response is set after a successful call
+	 * 
+	 * 			@nyndesigns: I will be making a pull request to the Rackspace PHP OpenCloud PHP SDK in the next few days
+	 * 			which will enable this method (BULK DELETE) for a container.
+	 * 
+	 * @param	array	the names of files to delete
+	 * @return	bool	TRUE on success, FALSE on failure 
+	 */
+    //~ public function bulk_delete_objects($names) {
+		//~ $this->reset_request_response();
+		//~ 
+        //~ try {
+            //~ $this->last_response = $this->container->Bulk_Delete($names);
+			//~ 
+            //~ return true;
+        //~ } catch (Exception $e) {
+            //~ $this->error = $e->getMessage();
+			//~ 
+            //~ return false;
+        //~ }
+	//~ }
 }
 
 /* End of file Opencloud.php */
