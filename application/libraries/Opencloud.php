@@ -302,6 +302,12 @@ class Opencloud
 	 * 
 	 * @note	$this->last_response is set after a successful call
 	 * 
+	 * 			If you are adding an archieved file (tar, tar.gz, tar.bz2) for extraction, you can use the $name param as a directory name for where the files will be extracted to
+	 * 			within the current container. To have the files extracted to the root container folder, set the $name param to '/'
+	 * 
+	 * 				ie. $name = 'folder' would result in all the extracted files being prefixed with `folder/` (ex. 'container/folder/my-file.txt')
+	 * 				ie. $name = '/' would result in all the extracted files being added to the root container (ex. 'container/my-file.txt')
+	 * 
 	 * @param	string	the name of file to add
 	 * @param	string	the file contents
 	 * @param	string	the content type (mime type) of the file
