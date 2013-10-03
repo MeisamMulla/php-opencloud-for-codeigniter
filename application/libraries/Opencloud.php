@@ -301,31 +301,49 @@ class Opencloud
 	 * @public
 	 * 
 	 * @note	$this->last_response is set after a successful call
+	 * 			
+	 * 			EXTRACT ARCHIVE NOTES
 	 * 
 	 * 			If you are adding an archieved file (tar, tar.gz, tar.bz2) for extraction, you can use the $name param as a directory name for where the files will be extracted to
 	 * 			within the current container. To have the files extracted to the root container folder, set the $name param to '/'
 	 * 
 	 * 				ie. $name = 'folder' would result in all the extracted files being prefixed with `folder/` (ex. 'container/folder/my-file.txt')
 	 * 				ie. $name = '/' would result in all the extracted files being added to the root container (ex. 'container/my-file.txt')
+	 * 			
+	 * 			If you want to easily parse archieved file results (since they are returned in the body of the HTML response) -- pass in an additional header using the $params param
+	 * 			with a valid response header accept type (Acceptable formats are text/plain, application/json, application/xml, and text/xml)
+	 * 
+	 * 				ie. $params[ 'extra_headers' ][ 'Accept' ] = 'application/json' would result in the response body being returned as a JSON string
+	 * 			
+	 * 			You can than access the response as follows:
+	 * 				
+	 * 				$response = json_decode( $this->last_response->httpBody() );
+	 * 				
+	 * 			Where $response would be OBJECT( 'Number Files Created' => int, 'Response Status' => string, 'Errors' => Object Array, 'Response Body' => string )
+	 * 
+	 * 			A Response Status === '201 Created' indicates all valid files were uploaded successfully
+	 * 
+	 * 			See documentation (http://docs.rackspace.com/files/api/v1/cf-devguide/content/Extract_Archive-d1e2338.html) for more information on response codes
 	 * 
 	 * @param	string	the name of file to add
 	 * @param	string	the file contents
 	 * @param	string	the content type (mime type) of the file
 	 * @param	mixed	to extract a tar.gz or tar.bz2 file being added, pass a string containing the type of extraction
 	 * 					you want performed after the compressed file is uploaded (ie. tar, tar.gz, tar.bz2)
+	 * @param	array	additional params to pass into the create data object call ( name, content_type, extra_headers, send_etag )
 	 * @return	bool 	TRUE on success, FALSE on failure  
 	 */   
-    public function add_object($name, $contents, $content_type, $extractArchive = null) {
+    public function add_object($name, $contents, $content_type, $extractArchive = null, $params = array()) {
 		$this->reset_request_response();
 		
         try {
-            $object = $this->container->DataObject();
+			$object = $this->container->DataObject();
 
             $object->SetData($contents);
             $object->name = $name;
             $object->content_type = $content_type;
-            $this->last_response = $object->Create(array(), null, $extractArchive);
-
+            $this->last_response = $object->Create($params, null, $extractArchive);
+			
             return true;
         } catch (Exception $e) {
             $this->error = $e->getMessage();
