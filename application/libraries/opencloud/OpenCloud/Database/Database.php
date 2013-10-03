@@ -1,30 +1,28 @@
 <?php
 /**
- * A database in the Cloud Databases service
- *
- * @copyright 2012-2013 Rackspace Hosting, Inc.
- * See COPYING for licensing information
- *
- * @package phpOpenCloud
- * @version 1.0
- * @author Glen Campbell <glen.campbell@rackspace.com>
+ * PHP OpenCloud library.
+ * 
+ * @copyright Copyright 2013 Rackspace US, Inc. See COPYING for licensing information.
+ * @license   https://www.apache.org/licenses/LICENSE-2.0 Apache 2.0
+ * @version   1.6.0
+ * @author    Glen Campbell <glen.campbell@rackspace.com>
+ * @author    Jamie Hannaford <jamie.hannaford@rackspace.com>
  */
 
 namespace OpenCloud\Database;
 
+use OpenCloud\Common\PersistentObject;
+use OpenCloud\Common\Exceptions;
+use OpenCloud\Common\Lang;
+
 /**
  * This class represents a Database in the Rackspace "Red Dwarf"
  * database-as-a-service product.
- *
- * @author Glen Campbell <glen.campbell@rackspace.com>
  */
-class Database extends \OpenCloud\Base\Base {
+class Database extends PersistentObject
+{
 
-    public
-        $name;
-
-    private
-        $_instance;
+    public $name;
 
     /**
      * Creates a new database object
@@ -45,30 +43,43 @@ class Database extends \OpenCloud\Base\Base {
      * @return void
      * @throws DatabaseNameError if `$info` is not a string, object, or array
      */
-    public function __construct(Instance $instance, $info=NULL) {
-        $this->_instance = $instance;
-        if (is_object($info) || is_array($info))
-            foreach($info as $property => $value)
-                $this->$property = $value;
-        elseif (is_string($info))
-            $this->name = $info;
-        elseif (isset($info))
-            throw new \OpenCloud\Base\Exceptions\DatabaseNameError(
-                \OpenCloud\Base\Lang::translate('Database parameter must be an object, array, or string'));
+    public function __construct(Instance $instance, $info = null)
+    {
+        $this->setParent($instance);
+        // Catering for laziness
+        if (is_string($info)) {
+            $info = array('name' => $info);
+        }
+        return parent::__construct($instance->getService(), $info);
     }
-
+    
+    /**
+     * Returns name of this database. Because it's so important (i.e. as an
+     * identifier), it will throw an error if not set/empty.
+     * 
+     * @return type
+     * @throws Exceptions\DatabaseNameError
+     */
+    public function getName()
+    {
+        if (empty($this->name)) {
+            throw new Exceptions\DatabaseNameError(
+                Lang::translate('The database does not have a Url yet')
+            );
+        }
+        return $this->name;
+    }
+    
     /**
      * Returns the Url of the Database
      *
      * @api
+     * @param string $subresource Not used
      * @return string
      */
-    public function Url() {
-        if (!isset($this->name))
-            throw new \OpenCloud\Base\Exceptions\DatabaseNameError(
-                \OpenCloud\Base\Lang::translate('The database does not have a Url yet'));
-        return stripslashes($this->Instance()->Url('databases'))
-                . '/' .$this->name;
+    public function url($subresource = '', $params = array())
+    {
+        return stripslashes($this->getParent()->url('databases')) . '/' . $this->getName();
     }
 
     /**
@@ -76,17 +87,9 @@ class Database extends \OpenCloud\Base\Base {
      *
      * @return Instance
      */
-    public function Instance() {
-        return $this->_instance;
-    }
-
-    /**
-     * Returns the related service
-     *
-     * @return \OpenCloud\DbService
-     */
-    public function Service() {
-    	return $this->Instance()->Service();
+    public function instance()
+    {
+        return $this->getParent();
     }
 
     /**
@@ -96,28 +99,33 @@ class Database extends \OpenCloud\Base\Base {
      * @param array $params array of attributes to set prior to Create
      * @return \OpenCloud\HttpResponse
      */
-    public function Create($params=array()) {
+    public function create($params = array())
+    {
         // target the /databases subresource
-        $url = $this->Instance()->Url('databases');
-        if (isset($params['name']))
+        $url = $this->getParent()->url('databases');
+
+        if (isset($params['name'])) {
         	$this->name = $params['name'];
-        $json = json_encode($this->CreateJson($params));
-        if ($this->CheckJsonError())
-        	return FALSE;
+        }
+
+        $json = json_encode($this->createJson($params));
+
+        $this->checkJsonError();
 
         // POST it off
-        $response = $this->Service()->Request(
-        	$url,
-        	'POST',
-        	array(),
-        	$json
-        );
+        $response = $this->getParent()->getService()->request($url, 'POST', array(), $json);
 
         // check the response code
-        if ($response->HttpStatus() != 202)
-        	throw new \OpenCloud\Base\Exceptions\DatabaseCreateError(sprintf(
-        		\OpenCloud\Base\Lang::translate('Error creating database [%s], status [%d] response [%s]'),
-        		$this->name, $response->HttpStatus(), $response->HttpBody()));
+        // @codeCoverageIgnoreStart
+        if ($response->HttpStatus() != 202) {
+        	throw new Exceptions\DatabaseCreateError(sprintf(
+                Lang::translate('Error creating database [%s], status [%d] response [%s]'),
+        		$this->name,
+                $response->HttpStatus(),
+                $response->HttpBody()
+            ));
+        }
+        // @codeCoverageIgnoreEnd
 
         // refresh and return
         return $response;
@@ -130,9 +138,9 @@ class Database extends \OpenCloud\Base\Base {
      * @throws DatabaseUpdateError always; updates are not permitted
      * @return void
      */
-    public function Update($params=array()) {
-    	throw new \OpenCloud\Base\Exceptions\DatabaseUpdateError(
-    		\OpenCloud\Base\Lang::translate('Updates are not currently permitted on Database objects'));
+    public function update($params = array())
+    {
+    	return $this->noUpdate();
     }
 
     /**
@@ -141,36 +149,34 @@ class Database extends \OpenCloud\Base\Base {
      * @api
      * @return \OpenCloud\HttpResponseb
      */
-    public function Delete() {
-    	$resp = $this->Service()->Request($this->Url(), 'DELETE');
-    	if ($resp->HttpStatus() != 202)
-    		throw new \OpenCloud\Base\Exceptions\DatabaseDeleteError(sprintf(
-    			\OpenCloud\Base\Lang::translate('Error deleting database [%s], status [%d] response [%s]'),
+    public function delete()
+    {
+    	$response = $this->getParent()->getService()->request($this->url(), 'DELETE');
+        
+        // @codeCoverageIgnoreStart
+    	if ($response->HttpStatus() != 202) {
+    		throw new Exceptions\DatabaseDeleteError(sprintf(
+                Lang::translate('Error deleting database [%s], status [%d] response [%s]'),
     			$this->name,
-    			$resp->HttpStatus(),
-    			$resp->HttpBody()));
-    	return $resp;
+    			$response->HttpStatus(),
+    			$response->HttpBody()
+            ));
+        }
+        // @codeCoverageIgnoreEnd
+        
+    	return $response;
     }
-
-    /********** PRIVATE METHODS **********/
 
     /**
      * Returns the JSON object for creating the database
      */
-    private function CreateJson($params=array()) {
-        $obj = new \stdClass();
-        $obj->databases = array();
-	    $obj->databases[0] = new \stdClass();
+    protected function createJson(array $params = array())
+    {
+        $database = (object) array_merge(array('name' => $this->getName(), $params));
 
-        // set the name
-	    if (!isset($this->name))
-	        throw new \OpenCloud\Base\Exceptions\DatabaseNameError(
-	            \OpenCloud\Base\Lang::translate('Database name is required'));
-	    $obj->databases[0]->name = $this->name;
-	    foreach($params as $key => $value)
-	    	$obj->databases[0]->$key = $value;
-
-        return $obj;
+        return (object) array(
+            'databases' => array($database)
+        );
     }
 
-} // class Database
+}
