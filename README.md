@@ -61,11 +61,10 @@ This will return a multi-dimentional array containing `name`, `content_type`, `b
 You will need to set the container first by using the method `set_container()`
 ```php
 $this->opencloud->set_container('MyContainer');
-$this->opencloud->add_object('text1.txt', file_get_contents('files/text1.txt'), 'text/plain');
-$this->opencloud->add_object('text2.txt', file_get_contents('files/text2.txt'), 'text/plain');
-$this->opencloud->add_object('text3.txt', file_get_contents('files/text3.txt'), 'text/plain');
+$this->opencloud->add_object('my_photo.img', 'path_to/my_photo.jpg','image/jpeg');
+
 ```
-The first paramater will be the name you will assign the object, the second is the contents of the file, and the third will be the Content-type of the file.
+The first parameter will be the name you will assign the object, the second is the path of the file, and the third will be the Content-type of the file (this is optional).
 
 ### <a name="delete_object"></a>Deleting Objects from a Container ###
 You will need to set the container first by using the method `set_container()`
