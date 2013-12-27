@@ -337,12 +337,11 @@ class Opencloud
 		$this->reset_request_response();
 		
         try {
-			$object = $this->container->DataObject();
+			      $object = $this->container->DataObject();
 
-            $object->SetData($contents);
             $object->name = $name;
             $object->content_type = $content_type;
-            $this->last_response = $object->Create($params, null, $extractArchive);
+            $this->last_response = $object->Create($params, $contents, $extractArchive);
 			
             return true;
         } catch (Exception $e) {
