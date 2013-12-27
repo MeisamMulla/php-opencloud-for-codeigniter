@@ -333,16 +333,15 @@ class Opencloud
 	 * @param	array	additional params to pass into the create data object call ( name, content_type, extra_headers, send_etag )
 	 * @return	bool 	TRUE on success, FALSE on failure  
 	 */   
-    public function add_object($name, $contents, $content_type, $extractArchive = null, $params = array()) {
+    public function add_object($name, $contents, $content_type = null, $extractArchive = null, $params = array()) {
 		$this->reset_request_response();
 		
         try {
-			$object = $this->container->DataObject();
+			      $object = $this->container->DataObject();
 
-            $object->SetData($contents);
             $object->name = $name;
             $object->content_type = $content_type;
-            $this->last_response = $object->Create($params, null, $extractArchive);
+            $this->last_response = $object->Create($params, $contents, $extractArchive);
 			
             return true;
         } catch (Exception $e) {
