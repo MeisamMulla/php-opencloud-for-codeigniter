@@ -353,6 +353,36 @@ class Opencloud
 	
 	
 	/**
+	 * Get Object
+	 * 
+	 * @public
+	 * 
+	 * @note	$this->last_response is set after a successful call
+	 * 
+	 * @param	string	the name of file to delete
+	 * @return	bool	object containing filename, content type and content as string on success, FALSE on failure
+	 */
+    public function get_object($name) {
+		$this->reset_request_response();
+		
+        try {
+        	
+			$object = new stdClass();
+			$object->filename = $this->container->DataObject($name)->name;
+			$object->content_type = $this->container->DataObject($name)->extra_headers["Content-Type"];
+			$object->content = $this->container->DataObject($name)->saveToString();
+           
+            return $object;
+           
+        } catch (Exception $e) {
+            $this->error = $e->getMessage();
+
+            return false;
+        }
+    } 
+	
+	
+	/**
 	 * Delete Object
 	 * 
 	 * @public
