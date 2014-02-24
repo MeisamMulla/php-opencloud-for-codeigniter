@@ -360,7 +360,7 @@ class Opencloud
 	 * @note	$this->last_response is set after a successful call
 	 * 
 	 * @param	string	the name of file to delete
-	 * @return	bool	object containing filename, content type and content as string on success, FALSE on failure
+	 * @return	mixed	object containing filename, content type and content as string on success. Or FALSE on failure
 	 */
     public function get_object($name) {
 		$this->reset_request_response();
