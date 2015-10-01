@@ -259,7 +259,7 @@ class Opencloud
      *  get_container_info
      *  @public
      *
-     *  @return mixed   array od data objects on the current container,
+     *  @return mixed   array of information on the specified container,
      *                  FALSE on error
      */
 
