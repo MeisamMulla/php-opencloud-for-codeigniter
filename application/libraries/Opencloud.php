@@ -88,7 +88,26 @@ class Opencloud
             $this->error = $e->getMessage();
         }
     }
-    
+
+    /**
+     * set_region
+     *
+     * @public
+     * @note  	changes region
+     *
+     * @param   string  the region you want to change to (ORD,LON,IAD...)
+     *
+     */
+    public function set_region($region){
+    	try {
+            $this->conn->SetDefaults('ObjectStore', 'cloudFiles', $region);
+            $this->ostore = $this->conn->ObjectStore();
+        } catch (Exception $e) {
+            $this->error = $e->getMessage();
+            return;
+        }
+        $this->opencloud_region = $region;
+    }
     
    	/**
 	 * Reset Request Response
@@ -236,6 +255,37 @@ class Opencloud
         }
     }
 
+    /**
+     *  get_container_info
+     *  @public
+     *
+     *  @return mixed   array of information on the specified container,
+     *                  FALSE on error
+     */
+
+    public function get_container_info($container_name) {
+        $this->reset_request_response();
+
+        try {
+            $container_info = $this->ostore->Container($container_name);
+
+            $info = array(
+                    "name" => $container_info->name,
+                    "object_count" => $container_info->count,
+                    "size" => $container_info->bytes,
+                    "CDNURI" => $container_info->CDNURI(),
+                    "SSLURI" => $container_info->SSLURI(),
+                    "streamingURI" => $container_info->streamingURI(),
+                    "iosStreamingURI" => $container_info->iosStreamingURI()
+                );
+            
+            return $info;
+        } catch (Exception $e) {
+            $this->error = $e->getMessage();
+
+            return false;
+        }
+    }
 
  	/**
 	 * Set Container
